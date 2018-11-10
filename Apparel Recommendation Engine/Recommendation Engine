@@ -1,0 +1,1150 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Requirement already satisfied: plotly in /anaconda3/lib/python3.6/site-packages (3.4.0)\n",
+      "Requirement already satisfied: nbformat>=4.2 in /anaconda3/lib/python3.6/site-packages (from plotly) (4.4.0)\n",
+      "Requirement already satisfied: retrying>=1.3.3 in /anaconda3/lib/python3.6/site-packages (from plotly) (1.3.3)\n",
+      "Requirement already satisfied: pytz in /anaconda3/lib/python3.6/site-packages (from plotly) (2017.3)\n",
+      "Requirement already satisfied: decorator>=4.0.6 in /anaconda3/lib/python3.6/site-packages (from plotly) (4.2.1)\n",
+      "Requirement already satisfied: requests in /anaconda3/lib/python3.6/site-packages (from plotly) (2.19.1)\n",
+      "Requirement already satisfied: six in /anaconda3/lib/python3.6/site-packages (from plotly) (1.11.0)\n",
+      "Requirement already satisfied: ipython_genutils in /anaconda3/lib/python3.6/site-packages (from nbformat>=4.2->plotly) (0.2.0)\n",
+      "Requirement already satisfied: traitlets>=4.1 in /anaconda3/lib/python3.6/site-packages (from nbformat>=4.2->plotly) (4.3.2)\n",
+      "Requirement already satisfied: jsonschema!=2.5.0,>=2.4 in /anaconda3/lib/python3.6/site-packages (from nbformat>=4.2->plotly) (2.6.0)\n",
+      "Requirement already satisfied: jupyter_core in /anaconda3/lib/python3.6/site-packages (from nbformat>=4.2->plotly) (4.4.0)\n",
+      "Requirement already satisfied: idna<2.8,>=2.5 in /anaconda3/lib/python3.6/site-packages (from requests->plotly) (2.7)\n",
+      "Requirement already satisfied: certifi>=2017.4.17 in /anaconda3/lib/python3.6/site-packages (from requests->plotly) (2018.4.16)\n",
+      "Requirement already satisfied: urllib3<1.24,>=1.21.1 in /anaconda3/lib/python3.6/site-packages (from requests->plotly) (1.23)\n",
+      "Requirement already satisfied: chardet<3.1.0,>=3.0.2 in /anaconda3/lib/python3.6/site-packages (from requests->plotly) (3.0.4)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<script type=\"text/javascript\">window.PlotlyConfig = {MathJaxConfig: 'local'};</script><script type=\"text/javascript\">if (window.MathJax) {MathJax.Hub.Config({SVG: {font: \"STIX-Web\"}});}</script><script>requirejs.config({paths: { 'plotly': ['https://cdn.plot.ly/plotly-latest.min']},});if(!window._Plotly) {require(['plotly'],function(plotly) {window._Plotly=plotly;});}</script>"
+      ],
+      "text/vnd.plotly.v1+html": [
+       "<script type=\"text/javascript\">window.PlotlyConfig = {MathJaxConfig: 'local'};</script><script type=\"text/javascript\">if (window.MathJax) {MathJax.Hub.Config({SVG: {font: \"STIX-Web\"}});}</script><script>requirejs.config({paths: { 'plotly': ['https://cdn.plot.ly/plotly-latest.min']},});if(!window._Plotly) {require(['plotly'],function(plotly) {window._Plotly=plotly;});}</script>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "#import all the necessary packages.\n",
+    "!pip install plotly\n",
+    "from PIL import Image\n",
+    "import requests\n",
+    "from io import BytesIO\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import warnings\n",
+    "from bs4 import BeautifulSoup\n",
+    "from nltk.corpus import stopwords\n",
+    "from nltk.tokenize import word_tokenize\n",
+    "import nltk\n",
+    "import math\n",
+    "import time\n",
+    "import re\n",
+    "import os\n",
+    "import seaborn as sns\n",
+    "from collections import Counter\n",
+    "from sklearn.feature_extraction.text import CountVectorizer\n",
+    "from sklearn.feature_extraction.text import TfidfVectorizer\n",
+    "from sklearn.metrics.pairwise import cosine_similarity  \n",
+    "from sklearn.metrics import pairwise_distances\n",
+    "from matplotlib import gridspec\n",
+    "from scipy.sparse import hstack\n",
+    "import plotly\n",
+    "import plotly.figure_factory as ff\n",
+    "from plotly.graph_objs import Scatter, Layout\n",
+    "\n",
+    "plotly.offline.init_notebook_mode(connected=True)\n",
+    "warnings.filterwarnings(\"ignore\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# we have give a json file which consists of all information about\n",
+    "# the products\n",
+    "# loading the data using pandas' read_json file.\n",
+    "import os\n",
+    "data = pd.read_json('tops_fashion.json')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Number of data points :  183138 \n",
+      "Number of features/variables: 19\n"
+     ]
+    }
+   ],
+   "source": [
+    "print ('Number of data points : ', data.shape[0], \\\n",
+    "       '\\nNumber of features/variables:', data.shape[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "count     183138\n",
+      "unique        72\n",
+      "top        SHIRT\n",
+      "freq      167794\n",
+      "Name: product_type_name, dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    "# We have total 72 unique type of product_type_names\n",
+    "print(data['product_type_name'].describe())\n",
+    "\n",
+    "# 91.62% (167794/183138) of the products are shirts,"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['SHIRT' 'SWEATER' 'APPAREL' 'OUTDOOR_RECREATION_PRODUCT'\n",
+      " 'BOOKS_1973_AND_LATER' 'PANTS' 'HAT' 'SPORTING_GOODS' 'DRESS' 'UNDERWEAR'\n",
+      " 'SKIRT' 'OUTERWEAR' 'BRA' 'ACCESSORY' 'ART_SUPPLIES' 'SLEEPWEAR'\n",
+      " 'ORCA_SHIRT' 'HANDBAG' 'PET_SUPPLIES' 'SHOES' 'KITCHEN' 'ADULT_COSTUME'\n",
+      " 'HOME_BED_AND_BATH' 'MISC_OTHER' 'BLAZER' 'HEALTH_PERSONAL_CARE'\n",
+      " 'TOYS_AND_GAMES' 'SWIMWEAR' 'CONSUMER_ELECTRONICS' 'SHORTS' 'HOME'\n",
+      " 'AUTO_PART' 'OFFICE_PRODUCTS' 'ETHNIC_WEAR' 'BEAUTY'\n",
+      " 'INSTRUMENT_PARTS_AND_ACCESSORIES' 'POWERSPORTS_PROTECTIVE_GEAR' 'SHIRTS'\n",
+      " 'ABIS_APPAREL' 'AUTO_ACCESSORY' 'NONAPPARELMISC' 'TOOLS' 'BABY_PRODUCT'\n",
+      " 'SOCKSHOSIERY' 'POWERSPORTS_RIDING_SHIRT' 'EYEWEAR' 'SUIT'\n",
+      " 'OUTDOOR_LIVING' 'POWERSPORTS_RIDING_JACKET' 'HARDWARE' 'SAFETY_SUPPLY'\n",
+      " 'ABIS_DVD' 'VIDEO_DVD' 'GOLF_CLUB' 'MUSIC_POPULAR_VINYL'\n",
+      " 'HOME_FURNITURE_AND_DECOR' 'TABLET_COMPUTER' 'GUILD_ACCESSORIES'\n",
+      " 'ABIS_SPORTS' 'ART_AND_CRAFT_SUPPLY' 'BAG' 'MECHANICAL_COMPONENTS'\n",
+      " 'SOUND_AND_RECORDING_EQUIPMENT' 'COMPUTER_COMPONENT' 'JEWELRY'\n",
+      " 'BUILDING_MATERIAL' 'LUGGAGE' 'BABY_COSTUME' 'POWERSPORTS_VEHICLE_PART'\n",
+      " 'PROFESSIONAL_HEALTHCARE' 'SEEDS_AND_PLANTS' 'WIRELESS_ACCESSORY']\n"
+     ]
+    }
+   ],
+   "source": [
+    "# names of different product types\n",
+    "print(data['product_type_name'].unique())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[('SHIRT', 167794),\n",
+       " ('APPAREL', 3549),\n",
+       " ('BOOKS_1973_AND_LATER', 3336),\n",
+       " ('DRESS', 1584),\n",
+       " ('SPORTING_GOODS', 1281),\n",
+       " ('SWEATER', 837),\n",
+       " ('OUTERWEAR', 796),\n",
+       " ('OUTDOOR_RECREATION_PRODUCT', 729),\n",
+       " ('ACCESSORY', 636),\n",
+       " ('UNDERWEAR', 425)]"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# find the 10 most frequent product_type_names.\n",
+    "product_type_count = Counter(list(data['product_type_name']))\n",
+    "product_type_count.most_common(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "count     182987\n",
+      "unique     10577\n",
+      "top         Zago\n",
+      "freq         223\n",
+      "Name: brand, dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    "# there are 10577 unique brands\n",
+    "print(data['brand'].describe())\n",
+    "\n",
+    "# 183138 - 182987 = 151 missing values."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[('Zago', 223),\n",
+       " ('XQS', 222),\n",
+       " ('Yayun', 215),\n",
+       " ('YUNY', 198),\n",
+       " ('XiaoTianXin-women clothes', 193),\n",
+       " ('Generic', 192),\n",
+       " ('Boohoo', 190),\n",
+       " ('Alion', 188),\n",
+       " ('Abetteric', 187),\n",
+       " ('TheMogan', 187)]"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "brand_count = Counter(list(data['brand']))\n",
+    "brand_count.most_common(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "count     64956\n",
+      "unique     7380\n",
+      "top       Black\n",
+      "freq      13207\n",
+      "Name: color, dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    "\n",
+    "print(data['color'].describe())\n",
+    "\n",
+    "\n",
+    "# we have 7380 unique colors\n",
+    "# 7.2% of products are black in color\n",
+    "# 64956 of 183138 products have brand information. That's approx 35.4%."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[(None, 118182),\n",
+       " ('Black', 13207),\n",
+       " ('White', 8616),\n",
+       " ('Blue', 3570),\n",
+       " ('Red', 2289),\n",
+       " ('Pink', 1842),\n",
+       " ('Grey', 1499),\n",
+       " ('*', 1388),\n",
+       " ('Green', 1258),\n",
+       " ('Multi', 1203)]"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "color_count = Counter(list(data['color']))\n",
+    "color_count.most_common(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "count      28395\n",
+      "unique      3135\n",
+      "top       $19.99\n",
+      "freq         945\n",
+      "Name: formatted_price, dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    " \n",
+    "print(data['formatted_price'].describe())\n",
+    "\n",
+    "# Only 28,395 (15.5% of whole data) products with price information"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[(None, 154743),\n",
+       " ('$19.99', 945),\n",
+       " ('$9.99', 749),\n",
+       " ('$9.50', 601),\n",
+       " ('$14.99', 472),\n",
+       " ('$7.50', 463),\n",
+       " ('$24.99', 414),\n",
+       " ('$29.99', 370),\n",
+       " ('$8.99', 343),\n",
+       " ('$9.01', 336)]"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "price_count = Counter(list(data['formatted_price']))\n",
+    "price_count.most_common(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "count                                                183138\n",
+      "unique                                               175985\n",
+      "top       Nakoda Cotton Self Print Straight Kurti For Women\n",
+      "freq                                                     77\n",
+      "Name: title, dtype: object\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(data['title'].describe())\n",
+    "\n",
+    "# All of the products have a title. \n",
+    "# Titles are fairly descriptive of what the product is. \n",
+    "# We use titles extensively in this workshop \n",
+    "# as they are short and informative.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data.to_pickle('180k_apparel_data')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Number of data points After eliminating price=NULL : 28395\n"
+     ]
+    }
+   ],
+   "source": [
+    "# consider products which have price information\n",
+    "# data['formatted_price'].isnull() => gives the information \n",
+    "#about the dataframe row's which have null values price == None|Null\n",
+    "data = data.loc[~data['formatted_price'].isnull()]\n",
+    "print('Number of data points After eliminating price=NULL :', data.shape[0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Number of data points After eliminating color=NULL : 28385\n"
+     ]
+    }
+   ],
+   "source": [
+    "# consider products which have color information\n",
+    "# data['color'].isnull() => gives the information about the dataframe row's which have null values price == None|Null\n",
+    "data =data.loc[~data['color'].isnull()]\n",
+    "print('Number of data points After eliminating color=NULL :', data.shape[0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data.to_pickle('28k_apparel_data')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2325\n"
+     ]
+    }
+   ],
+   "source": [
+    "# read data from pickle file from previous stage\n",
+    "data = pd.read_pickle('28k_apparel_data')\n",
+    "\n",
+    "# find number of products that have duplicate titles.\n",
+    "print(sum(data.duplicated('title')))\n",
+    "# we have 2325 products which have same title but different color\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# read data from pickle file from previous stage\n",
+    "data = pd.read_pickle('28k_apparel_data')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>asin</th>\n",
+       "      <th>author</th>\n",
+       "      <th>availability</th>\n",
+       "      <th>availability_type</th>\n",
+       "      <th>brand</th>\n",
+       "      <th>color</th>\n",
+       "      <th>editorial_reivew</th>\n",
+       "      <th>editorial_review</th>\n",
+       "      <th>formatted_price</th>\n",
+       "      <th>large_image_url</th>\n",
+       "      <th>manufacturer</th>\n",
+       "      <th>medium_image_url</th>\n",
+       "      <th>model</th>\n",
+       "      <th>product_type_name</th>\n",
+       "      <th>publisher</th>\n",
+       "      <th>reviews</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>small_image_url</th>\n",
+       "      <th>title</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>B004GSI2OS</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 6-10 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>FeatherLite</td>\n",
+       "      <td>Onyx Black/ Stone</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td></td>\n",
+       "      <td>$26.26</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>Featherlite Ladies' Long Sleeve Stain Resistan...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>B012YX2ZPI</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 4-5 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>HX-Kingdom Fashion T-shirts</td>\n",
+       "      <td>White</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>This Personalized Special Olympics World Games...</td>\n",
+       "      <td>$9.99</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>Women's Unique 100% Cotton T - Special Olympic...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>11</th>\n",
+       "      <td>B001LOUGE4</td>\n",
+       "      <td>None</td>\n",
+       "      <td>None</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Fitness Etc.</td>\n",
+       "      <td>Black</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>Light Weight 2x1 Boy Beater Tank Top.  Great t...</td>\n",
+       "      <td>$11.99</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>Ladies Cotton Tank 2x1 Ribbed Tank Top</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>15</th>\n",
+       "      <td>B003BSRPB0</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 6-10 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>FeatherLite</td>\n",
+       "      <td>White</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>FeatherLite Ladies' Moisture Free Mesh Sport S...</td>\n",
+       "      <td>$20.54</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>HT-2001_Lime-1149-XL</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>FeatherLite Ladies' Moisture Free Mesh Sport S...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>21</th>\n",
+       "      <td>B014ICEDNA</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 4-5 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>FNC7C</td>\n",
+       "      <td>Purple</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>Supernatural Chibis Sam Dean And Castiel Women...</td>\n",
+       "      <td>$7.50</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[True, https://www.amazon.com/reviews/iframe?a...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>Supernatural Chibis Sam Dean And Castiel Short...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "          asin author                         availability availability_type  \\\n",
+       "4   B004GSI2OS   None  Usually ships in 6-10 business days               now   \n",
+       "6   B012YX2ZPI   None   Usually ships in 4-5 business days               now   \n",
+       "11  B001LOUGE4   None                                 None              None   \n",
+       "15  B003BSRPB0   None  Usually ships in 6-10 business days               now   \n",
+       "21  B014ICEDNA   None   Usually ships in 4-5 business days               now   \n",
+       "\n",
+       "                          brand              color editorial_reivew  \\\n",
+       "4                   FeatherLite  Onyx Black/ Stone              NaN   \n",
+       "6   HX-Kingdom Fashion T-shirts              White              NaN   \n",
+       "11                 Fitness Etc.              Black              NaN   \n",
+       "15                  FeatherLite              White              NaN   \n",
+       "21                        FNC7C             Purple              NaN   \n",
+       "\n",
+       "                                     editorial_review formatted_price  \\\n",
+       "4                                                              $26.26   \n",
+       "6   This Personalized Special Olympics World Games...           $9.99   \n",
+       "11  Light Weight 2x1 Boy Beater Tank Top.  Great t...          $11.99   \n",
+       "15  FeatherLite Ladies' Moisture Free Mesh Sport S...          $20.54   \n",
+       "21  Supernatural Chibis Sam Dean And Castiel Women...           $7.50   \n",
+       "\n",
+       "                                      large_image_url manufacturer  \\\n",
+       "4   https://images-na.ssl-images-amazon.com/images...         None   \n",
+       "6   https://images-na.ssl-images-amazon.com/images...         None   \n",
+       "11  https://images-na.ssl-images-amazon.com/images...         None   \n",
+       "15  https://images-na.ssl-images-amazon.com/images...         None   \n",
+       "21  https://images-na.ssl-images-amazon.com/images...         None   \n",
+       "\n",
+       "                                     medium_image_url model product_type_name  \\\n",
+       "4   https://images-na.ssl-images-amazon.com/images...  None             SHIRT   \n",
+       "6   https://images-na.ssl-images-amazon.com/images...  None             SHIRT   \n",
+       "11  https://images-na.ssl-images-amazon.com/images...  None             SHIRT   \n",
+       "15  https://images-na.ssl-images-amazon.com/images...  None             SHIRT   \n",
+       "21  https://images-na.ssl-images-amazon.com/images...  None             SHIRT   \n",
+       "\n",
+       "   publisher                                            reviews  \\\n",
+       "4       None  [False, https://www.amazon.com/reviews/iframe?...   \n",
+       "6       None  [False, https://www.amazon.com/reviews/iframe?...   \n",
+       "11      None  [False, https://www.amazon.com/reviews/iframe?...   \n",
+       "15      None  [False, https://www.amazon.com/reviews/iframe?...   \n",
+       "21      None  [True, https://www.amazon.com/reviews/iframe?a...   \n",
+       "\n",
+       "                     sku                                    small_image_url  \\\n",
+       "4                   None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "6                   None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "11                  None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "15  HT-2001_Lime-1149-XL  https://images-na.ssl-images-amazon.com/images...   \n",
+       "21                  None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "\n",
+       "                                                title  \n",
+       "4   Featherlite Ladies' Long Sleeve Stain Resistan...  \n",
+       "6   Women's Unique 100% Cotton T - Special Olympic...  \n",
+       "11             Ladies Cotton Tank 2x1 Ribbed Tank Top  \n",
+       "15  FeatherLite Ladies' Moisture Free Mesh Sport S...  \n",
+       "21  Supernatural Chibis Sam Dean And Castiel Short...  "
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "After removal of products with short description: 27949\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Remove All products with very few words in title\n",
+    "data_sorted = data[data['title'].apply(lambda x: len(x.split())>4)]\n",
+    "print(\"After removal of products with short description:\", data_sorted.shape[0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>asin</th>\n",
+       "      <th>author</th>\n",
+       "      <th>availability</th>\n",
+       "      <th>availability_type</th>\n",
+       "      <th>brand</th>\n",
+       "      <th>color</th>\n",
+       "      <th>editorial_reivew</th>\n",
+       "      <th>editorial_review</th>\n",
+       "      <th>formatted_price</th>\n",
+       "      <th>large_image_url</th>\n",
+       "      <th>manufacturer</th>\n",
+       "      <th>medium_image_url</th>\n",
+       "      <th>model</th>\n",
+       "      <th>product_type_name</th>\n",
+       "      <th>publisher</th>\n",
+       "      <th>reviews</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>small_image_url</th>\n",
+       "      <th>title</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>61973</th>\n",
+       "      <td>B06Y1KZ2WB</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 1-2 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>Éclair</td>\n",
+       "      <td>Black/Pink</td>\n",
+       "      <td>Perfect for summer adventures, feminine touch ...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>$24.99</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>Éclair Women's Printed Thin Strap Blouse Black...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>133820</th>\n",
+       "      <td>B010RV33VE</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 4-5 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>xiaoming</td>\n",
+       "      <td>Pink</td>\n",
+       "      <td>&lt;p&gt;Korean Style Womens' Sleeveless Loose Long ...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>$18.19</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>xiaona10326758</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>xiaoming Womens Sleeveless Loose Long T-shirts...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>81461</th>\n",
+       "      <td>B01DDSDLNS</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 4-5 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>xiaoming</td>\n",
+       "      <td>White</td>\n",
+       "      <td>&lt;br&gt;1.xiaoming is a modern lifestyle brand tha...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>$21.58</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>MxiaoCotds</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>xiaoming Women's White Long Sleeve Single Brea...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>75995</th>\n",
+       "      <td>B00X5LYO9Y</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 4-5 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>xiaoming</td>\n",
+       "      <td>Red Anchors</td>\n",
+       "      <td>Sleeve Style: Short Sleeve&lt;br /&gt;Patten:Stripes...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>$15.91</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>xiaoming Stripes Tank Patch/Bear Sleeve Anchor...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>151570</th>\n",
+       "      <td>B00WPJG35K</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Usually ships in 4-5 business days</td>\n",
+       "      <td>now</td>\n",
+       "      <td>xiaoming</td>\n",
+       "      <td>White</td>\n",
+       "      <td>Material :Lace&lt;br /&gt;This cardigan is imported ...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>$14.32</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>SHIRT</td>\n",
+       "      <td>None</td>\n",
+       "      <td>[False, https://www.amazon.com/reviews/iframe?...</td>\n",
+       "      <td>None</td>\n",
+       "      <td>https://images-na.ssl-images-amazon.com/images...</td>\n",
+       "      <td>xiaoming Sleeve Sheer Loose Tassel Kimono Woma...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "              asin author                        availability  \\\n",
+       "61973   B06Y1KZ2WB   None  Usually ships in 1-2 business days   \n",
+       "133820  B010RV33VE   None  Usually ships in 4-5 business days   \n",
+       "81461   B01DDSDLNS   None  Usually ships in 4-5 business days   \n",
+       "75995   B00X5LYO9Y   None  Usually ships in 4-5 business days   \n",
+       "151570  B00WPJG35K   None  Usually ships in 4-5 business days   \n",
+       "\n",
+       "       availability_type     brand        color  \\\n",
+       "61973                now    Éclair   Black/Pink   \n",
+       "133820               now  xiaoming         Pink   \n",
+       "81461                now  xiaoming        White   \n",
+       "75995                now  xiaoming  Red Anchors   \n",
+       "151570               now  xiaoming        White   \n",
+       "\n",
+       "                                         editorial_reivew editorial_review  \\\n",
+       "61973   Perfect for summer adventures, feminine touch ...              NaN   \n",
+       "133820  <p>Korean Style Womens' Sleeveless Loose Long ...              NaN   \n",
+       "81461   <br>1.xiaoming is a modern lifestyle brand tha...              NaN   \n",
+       "75995   Sleeve Style: Short Sleeve<br />Patten:Stripes...              NaN   \n",
+       "151570  Material :Lace<br />This cardigan is imported ...              NaN   \n",
+       "\n",
+       "       formatted_price                                    large_image_url  \\\n",
+       "61973           $24.99  https://images-na.ssl-images-amazon.com/images...   \n",
+       "133820          $18.19  https://images-na.ssl-images-amazon.com/images...   \n",
+       "81461           $21.58  https://images-na.ssl-images-amazon.com/images...   \n",
+       "75995           $15.91  https://images-na.ssl-images-amazon.com/images...   \n",
+       "151570          $14.32  https://images-na.ssl-images-amazon.com/images...   \n",
+       "\n",
+       "       manufacturer                                   medium_image_url  \\\n",
+       "61973          None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "133820         None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "81461          None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "75995          None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "151570         None  https://images-na.ssl-images-amazon.com/images...   \n",
+       "\n",
+       "                 model product_type_name publisher  \\\n",
+       "61973             None             SHIRT      None   \n",
+       "133820  xiaona10326758             SHIRT      None   \n",
+       "81461       MxiaoCotds             SHIRT      None   \n",
+       "75995             None             SHIRT      None   \n",
+       "151570            None             SHIRT      None   \n",
+       "\n",
+       "                                                  reviews   sku  \\\n",
+       "61973   [False, https://www.amazon.com/reviews/iframe?...  None   \n",
+       "133820  [False, https://www.amazon.com/reviews/iframe?...  None   \n",
+       "81461   [False, https://www.amazon.com/reviews/iframe?...  None   \n",
+       "75995   [False, https://www.amazon.com/reviews/iframe?...  None   \n",
+       "151570  [False, https://www.amazon.com/reviews/iframe?...  None   \n",
+       "\n",
+       "                                          small_image_url  \\\n",
+       "61973   https://images-na.ssl-images-amazon.com/images...   \n",
+       "133820  https://images-na.ssl-images-amazon.com/images...   \n",
+       "81461   https://images-na.ssl-images-amazon.com/images...   \n",
+       "75995   https://images-na.ssl-images-amazon.com/images...   \n",
+       "151570  https://images-na.ssl-images-amazon.com/images...   \n",
+       "\n",
+       "                                                    title  \n",
+       "61973   Éclair Women's Printed Thin Strap Blouse Black...  \n",
+       "133820  xiaoming Womens Sleeveless Loose Long T-shirts...  \n",
+       "81461   xiaoming Women's White Long Sleeve Single Brea...  \n",
+       "75995   xiaoming Stripes Tank Patch/Bear Sleeve Anchor...  \n",
+       "151570  xiaoming Sleeve Sheer Loose Tassel Kimono Woma...  "
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Sort the whole data based on title (alphabetical order of title) \n",
+    "data_sorted.sort_values('title',inplace=True, ascending=False)\n",
+    "data_sorted.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "indices = []\n",
+    "for i,row in data_sorted.iterrows():\n",
+    "    indices.append(i)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import itertools\n",
+    "stage1_dedupe_asins = []\n",
+    "i = 0\n",
+    "j = 0\n",
+    "num_data_points = data_sorted.shape[0]\n",
+    "while i < num_data_points and j < num_data_points:\n",
+    "    \n",
+    "    previous_i = i\n",
+    "\n",
+    "    # store the list of words of ith string in a, ex: a = ['tokidoki', 'The', 'Queen', 'of', 'Diamonds', 'Women's', 'Shirt', 'X-Large']\n",
+    "    a = data['title'].loc[indices[i]].split()\n",
+    "\n",
+    "    # search for the similar products sequentially \n",
+    "    j = i+1\n",
+    "    while j < num_data_points:\n",
+    "\n",
+    "        # store the list of words of jth string in b, ex: b = ['tokidoki', 'The', 'Queen', 'of', 'Diamonds', 'Women's', 'Shirt', 'Small']\n",
+    "        b = data['title'].loc[indices[j]].split()\n",
+    "\n",
+    "        # store the maximum length of two strings\n",
+    "        length = max(len(a), len(b))\n",
+    "\n",
+    "        # count is used to store the number of words that are matched in both strings\n",
+    "        count  = 0\n",
+    "\n",
+    "        # itertools.zip_longest(a,b): will map the corresponding words in both strings, it will appened None in case of unequal strings\n",
+    "        # example: a =['a', 'b', 'c', 'd']\n",
+    "        # b = ['a', 'b', 'd']\n",
+    "        # itertools.zip_longest(a,b): will give [('a','a'), ('b','b'), ('c','d'), ('d', None)]\n",
+    "        for k in itertools.zip_longest(a,b): \n",
+    "            if (k[0] == k[1]):\n",
+    "                count += 1\n",
+    "\n",
+    "        # if the number of words in which both strings differ are > 2 , we are considering it as those two apperals are different\n",
+    "        # if the number of words in which both strings differ are < 2 , we are considering it as those two apperals are same, hence we are ignoring them\n",
+    "        if (length - count) > 2: # number of words in which both sensences differ\n",
+    "            # if both strings are differ by more than 2 words we include the 1st string index\n",
+    "            stage1_dedupe_asins.append(data_sorted['asin'].loc[indices[i]])\n",
+    "\n",
+    "            # if the comaprision between is between num_data_points, num_data_points-1 strings and they differ in more than 2 words we include both\n",
+    "            if j == num_data_points-1: stage1_dedupe_asins.append(data_sorted['asin'].loc[indices[j]])\n",
+    "\n",
+    "            # start searching for similar apperals corresponds 2nd string\n",
+    "            i = j\n",
+    "            break\n",
+    "        else:\n",
+    "            j += 1\n",
+    "    if previous_i == i:\n",
+    "        break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data = data.loc[data['asin'].isin(stage1_dedupe_asins)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Number of data points :  17593\n"
+     ]
+    }
+   ],
+   "source": [
+    "print('Number of data points : ', data.shape[0])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data.to_pickle('17k_apperal_data')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data = pd.read_pickle('17k_apperal_data')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# This code snippet takes significant amount of time.\n",
+    "# O(n^2) time.\n",
+    "# Takes about an hour to run on a decent computer.\n",
+    "\n",
+    "indices = []\n",
+    "for i,row in data.iterrows():\n",
+    "    indices.append(i)\n",
+    "\n",
+    "stage2_dedupe_asins = []\n",
+    "while len(indices)!=0:\n",
+    "    i = indices.pop()\n",
+    "    stage2_dedupe_asins.append(data['asin'].loc[i])\n",
+    "    # consider the first apperal's title\n",
+    "    a = data['title'].loc[i].split()\n",
+    "    # store the list of words of ith string in a, ex: a = ['tokidoki', 'The', 'Queen', 'of', 'Diamonds', 'Women's', 'Shirt', 'X-Large']\n",
+    "    for j in indices:\n",
+    "        \n",
+    "        b = data['title'].loc[j].split()\n",
+    "        # store the list of words of jth string in b, ex: b = ['tokidoki', 'The', 'Queen', 'of', 'Diamonds', 'Women's', 'Shirt', 'X-Large']\n",
+    "        \n",
+    "        length = max(len(a),len(b))\n",
+    "        \n",
+    "        # count is used to store the number of words that are matched in both strings\n",
+    "        count  = 0\n",
+    "\n",
+    "        # itertools.zip_longest(a,b): will map the corresponding words in both strings, it will appened None in case of unequal strings\n",
+    "        # example: a =['a', 'b', 'c', 'd']\n",
+    "        # b = ['a', 'b', 'd']\n",
+    "        # itertools.zip_longest(a,b): will give [('a','a'), ('b','b'), ('c','d'), ('d', None)]\n",
+    "        for k in itertools.zip_longest(a,b): \n",
+    "            if (k[0]==k[1]):\n",
+    "                count += 1\n",
+    "\n",
+    "        # if the number of words in which both strings differ are < 3 , we are considering it as those two apperals are same, hence we are ignoring them\n",
+    "        if (length - count) < 3:\n",
+    "            indices.remove(j)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
